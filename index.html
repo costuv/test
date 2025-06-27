@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <!-- Matrix Rain Loading Screen -->
+    <div id="loading-screen">
+        <canvas id="matrix-canvas"></canvas>
+        <div class="loading-text">...LOADING...</div>
+    </div>
+    
+    <div class="container">
+        <div class="sidebar">
+            <div class="sidebar-icon"><i class="fas fa-home"></i></div>
+            <div class="sidebar-icon"><i class="fas fa-puzzle-piece"></i></div>
+            <div class="sidebar-icon"><i class="fas fa-user"></i></div>
+            <div class="sidebar-icon"><i class="fas fa-envelope"></i></div>
+        </div>
+        <div class="main-content">
+            <div class="window-header">
+                <div class="window-buttons">
+                    <span class="window-button"></span>
+                    <span class="window-button"></span>
+                    <span class="window-button"></span>
+                </div>
+                <div class="window-title">kaustuv@portfolio ~</div>
+            </div>
+            <div class="window-divider"></div>
+            <div class="marquee-header">
+                <marquee scrollamount="5" behavior="scroll" direction="left" class="tech-marquee">
+                    <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/c/c-original.svg" alt="C">
+                    <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg"
+                        alt="Python">
+                    <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/php/php-original.svg" alt="PHP">
+                    <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/aftereffects/aftereffects-original.svg"
+                        alt="After Effects">
+                    <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/premierepro/premierepro-original.svg"
+                        alt="Premiere Pro">
+                    <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/photoshop/photoshop-plain.svg"
+                        alt="Photoshop">
+                    <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/illustrator/illustrator-plain.svg"
+                        alt="Illustrator">
+                    <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/html5/html5-original.svg" alt="HTML5">
+                    <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/css3/css3-original.svg" alt="CSS3">
+                    <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg"
+                        alt="JavaScript">
+                    <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/unrealengine/unrealengine-original.svg"
+                        alt="Unreal Engine">
+                </marquee>
+            </div>
+            <div class="window-divider"></div>
+            <div class="whoami-header">
+                <div class="whoami-title">$ whoami</div>
+            </div>
+            <div class="whoami-section">                <div class="whoami-response">
+                    <h1 class="name">KAUSTUV DHUNGEL</h1>
+                    <h2 class="title">
+                        <span id="typewriter"></span><span class="cursor"></span>
+                    </h2>
+                </div>
+            </div>
+            <div class="terminal-container">
+                <div class="window-header">
+                    <div class="window-buttons">
+                        <span class="window-button"></span>
+                        <span class="window-button"></span>
+                        <span class="window-button"></span>
+                    </div>
+                    <div class="window-title">text-adventure.js</div>
+                </div>                <div id="terminal-content">
+                </div>
+                <div class="terminal-input-container">
+                    <span id="prompt">$</span>
+                    <input type="text" id="terminal-input-box" autocapitalize="off" autocorrect="off" autocomplete="off"
+                        spellcheck="false" placeholder="Type your name...">
+                </div>
+
+                <!-- Game Transition Loading Screen -->
+                <div id="game-loading-screen" style="display: none;">
+                    <canvas id="game-matrix-canvas"></canvas>
+                    <div class="loading-text">LAUNCHING TERMINAL...</div>
+                </div>
+                
+                <!-- Split Terminal (hidden by default) -->
+                <div id="split-terminal" style="display: none;">
+                    <div class="split-container">                        <!-- Left Side: Linux Terminal -->                        <div id="game-terminal">
+                            <div id="game-terminal-content"></div>
+                            <div class="terminal-input-container">
+                                <span id="game-prompt">$</span>
+                                <input type="text" id="game-terminal-input" autocapitalize="off" autocorrect="off" autocomplete="off"
+                                    spellcheck="false" placeholder="Enter a command...">
+                            </div>
+                        </div>
+                        <!-- Right Side: Game Login Screen -->
+                        <div id="login-screen">
+                            <!-- Matrix background for login -->
+                            <div class="matrix-rain">
+                                <canvas id="login-matrix-canvas"></canvas>
+                            </div>
+                            
+                            <div class="login-header">
+                                <h2>COSTUV</h2>
+                                <div class="blink-text">SYSTEM ACCESS</div>
+                            </div>
+                            <div class="login-form">
+                                <div class="form-group">
+                                    <label for="username">Username</label>
+                                    <input type="text" id="username" placeholder="Enter username" autocomplete="off">
+                                </div>
+                                <div class="form-group">
+                                    <label for="password">Password</label>
+                                    <input type="password" id="password" placeholder="Enter password" autocomplete="off">
+                                </div>
+                                <button id="login-button">ACCESS</button>
+                            </div>
+                            <div class="login-footer">
+                                <p class="time-display">1:21:00 PM</p>
+                            </div>
+                            
+                            <!-- Login success overlay -->
+                            <div class="login-success-overlay">
+                                <div class="success-icon"></div>
+                                <div class="success-message">ACCESS GRANTED</div>
+                                <div class="success-details">Welcome to COSTUV Security System</div>
+                                <button class="continue-button">CONTINUE</button>
+                            </div>
+                                    <p class="hint-text">You are a spy and need to break into a target's computer.</p>
+                                    <p class="hint-text">The username and password are hidden somewhere in the system.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script src="index.js"></script>
+</body>
+
+</html>
