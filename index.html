@@ -17,7 +17,7 @@
         <canvas id="matrix-canvas"></canvas>
         <div class="loading-text">...LOADING...</div>
     </div>
-    
+
     <div class="container">
         <div class="sidebar">
             <div class="sidebar-icon"><i class="fas fa-home"></i></div>
@@ -61,7 +61,8 @@
             <div class="whoami-header">
                 <div class="whoami-title">$ whoami</div>
             </div>
-            <div class="whoami-section">                <div class="whoami-response">
+            <div class="whoami-section">
+                <div class="whoami-response">
                     <h1 class="name">KAUSTUV DHUNGEL</h1>
                     <h2 class="title">
                         <span id="typewriter"></span><span class="cursor"></span>
@@ -76,7 +77,8 @@
                         <span class="window-button"></span>
                     </div>
                     <div class="window-title">text-adventure.js</div>
-                </div>                <div id="terminal-content">
+                </div>
+                <div id="terminal-content">
                 </div>
                 <div class="terminal-input-container">
                     <span id="prompt">$</span>
@@ -89,15 +91,17 @@
                     <canvas id="game-matrix-canvas"></canvas>
                     <div class="loading-text">LAUNCHING TERMINAL...</div>
                 </div>
-                
+
                 <!-- Split Terminal (hidden by default) -->
                 <div id="split-terminal" style="display: none;">
-                    <div class="split-container">                        <!-- Left Side: Linux Terminal -->                        <div id="game-terminal">
+                    <div class="split-container"> <!-- Left Side: Linux Terminal -->
+                        <div id="game-terminal">
                             <div id="game-terminal-content"></div>
                             <div class="terminal-input-container">
                                 <span id="game-prompt">$</span>
-                                <input type="text" id="game-terminal-input" autocapitalize="off" autocorrect="off" autocomplete="off"
-                                    spellcheck="false" placeholder="Enter a command...">
+                                <input type="text" id="game-terminal-input" autocapitalize="off" autocorrect="off"
+                                    autocomplete="off" spellcheck="false"
+                                    placeholder="Type 'help' to see available commands. Auto fill is enabled.">
                             </div>
                         </div>
                         <!-- Right Side: Game Login Screen -->
@@ -106,7 +110,7 @@
                             <div class="matrix-rain">
                                 <canvas id="login-matrix-canvas"></canvas>
                             </div>
-                            
+
                             <div class="login-header">
                                 <h2>COSTUV</h2>
                                 <div class="blink-text">SYSTEM ACCESS</div>
@@ -118,31 +122,46 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="password">Password</label>
-                                    <input type="password" id="password" placeholder="Enter password" autocomplete="off">
+                                    <input type="password" id="password" placeholder="Enter password"
+                                        autocomplete="off">
                                 </div>
                                 <button id="login-button">ACCESS</button>
                             </div>
                             <div class="login-footer">
                                 <p class="time-display">1:21:00 PM</p>
                             </div>
-                            
+
                             <!-- Login success overlay -->
                             <div class="login-success-overlay">
-                                <div class="success-icon"></div>
+                                <div class="success-icon">
+                                    <svg class="checkmark" viewBox="0 0 52 52">
+                                        <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none" />
+                                        <path class="checkmark-check" fill="none" d="M14 27l7 7 16-16" />
+                                    </svg>
+                                </div>
                                 <div class="success-message">ACCESS GRANTED</div>
-                                <div class="success-details">Welcome to COSTUV Security System</div>
+                                <div class="success-details">Welcome to COSTUV Security System. Type 'exit' to go back.
+                                </div>
                                 <button class="continue-button">CONTINUE</button>
                             </div>
-                                    <p class="hint-text">You are a spy and need to break into a target's computer.</p>
-                                    <p class="hint-text">The username and password are hidden somewhere in the system.</p>
-                                </div>
-                            </div>
+                            <p class="hint-text">You are a spy and need to break into a target's computer.</p>
+                            <p class="hint-text">The username and password are hidden somewhere in the system.</p>
                         </div>
                     </div>
                 </div>
             </div>
+            <div class="terminal-buttons-bar">
+                <button class="terminal-action-btn" onclick="window.location.href='./view-projects'">$ ./view-projects
+                </button>
+                <button class="terminal-action-btn" onclick="window.location.href='./contact-me'">$ ./contact-me
+                </button>
+            </div>
+            <!-- Custom buttons below the terminal -->
+            <div class="window-divider"></div>
+            <div class="games-section name">My Games</div>
         </div>
-        <script src="index.js"></script>
+    </div>
+    <script src="index.js"></script>
 </body>
 
 </html>
