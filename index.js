@@ -410,8 +410,8 @@ function attemptLogin() {
   
   // Scan the file system for the hidden credentials
   const creds = fileSystem.scanFilesForCredentials();
-  const correctUsername = creds.username;
-  const correctPassword = creds.password;
+  const correctUsername = creds.username ? creds.username.toLowerCase() : '';
+  const correctPassword = creds.password ? creds.password.toLowerCase() : '';
   
   console.log(`Checking login with username: ${usernameInput}, password: ${passwordInput}`);
   console.log(`Correct credentials: username=${correctUsername}, password=${correctPassword}`);
@@ -437,30 +437,15 @@ function attemptLogin() {
     });
     
     // Update terminal with success message (behind the scenes)
-    gameTerminalContent.innerHTML += `<div class="system-message">Access granted! Welcome to the system, ${usernameInput}.</div>`;
-    gameTerminalContent.innerHTML += `<div class="system-message">Unlocking secret files...</div>`;
-    gameTerminalContent.innerHTML += `<div class="system-message">Mission objectives updated. Check your terminal.</div>`;
-    
-    // Add a new command to the game terminal
-    gameCommands.mission = function() {
-      gameTerminalContent.innerHTML += `<div class="system-message">MISSION OBJECTIVES:</div>`;
-      gameTerminalContent.innerHTML += `<div class="system-message">1. Find the hidden vault</div>`;
-      gameTerminalContent.innerHTML += `<div class="system-message">2. Decrypt the security system</div>`;
-      gameTerminalContent.innerHTML += `<div class="system-message">3. Extract the confidential files</div>`;
-      scrollGameTerminal();
-    };
-    
-    // Update help command to show new mission command
-    gameCommands.help = function() {
-      gameTerminalContent.innerHTML += `<div class="system-message">Available game commands:</div>`;
-      gameTerminalContent.innerHTML += `<div class="system-message">look - Look around you</div>`;
-      gameTerminalContent.innerHTML += `<div class="system-message">inventory - Check your inventory</div>`;
-      gameTerminalContent.innerHTML += `<div class="system-message">status - Check your status</div>`;
-      gameTerminalContent.innerHTML += `<div class="system-message">mission - View mission objectives</div>`;
-      gameTerminalContent.innerHTML += `<div class="system-message">exit - Return to main terminal</div>`;
-      gameTerminalContent.innerHTML += `<div class="system-message">clear - Clear the terminal</div>`;
-      scrollGameTerminal();
-    };
+    gameTerminalContent.innerHTML += `
+      <div class="system-message success-message" style="color:#8EFF9F;font-weight:bold;font-size:1.2em;margin-top:16px;">
+        <span style="font-size:1.5em; animation: pop-tick 0.7s cubic-bezier(.68,-0.55,.27,1.55); display:inline-block;">✔️</span> ACCESS GRANTED!<br>
+        <span>Welcome, <b>${usernameInput}</b>! You have successfully cracked the login.<br>
+        <span style="color:#fff;">Secret files are being unlocked...</span><br>
+        <span style="color:#FFD700;">Mission objectives updated. Type <b>mission</b> to view them.</span>
+      </div>
+      <style>@keyframes pop-tick {0%{transform:scale(0.2) rotate(-30deg);} 60%{transform:scale(1.2) rotate(10deg);} 80%{transform:scale(0.95) rotate(-5deg);} 100%{transform:scale(1) rotate(0deg);}}</style>
+    `;
     
     scrollGameTerminal();
   } else {
@@ -483,7 +468,7 @@ function attemptLogin() {
 if (username) {
     terminal.innerHTML += `<div class="system-message">Welcome back, ${username}!</div>`;
     terminal.innerHTML += `<div class="system-message">Type 'help' to see available commands</div>`;
-    input.placeholder = "Enter a command...";
+    input.placeholder = "Type 'start' to begin or 'help' to see available commands.";
     prompt.innerHTML = `${username.toLowerCase()}@costuv.tech:~$ `;
     scrollTerminal();
 } else {
@@ -496,13 +481,19 @@ if (username) {
 function processCommand(cmd) {
   terminal.innerHTML += `<div class="command-line">${username ? username.toLowerCase() : ''}@costuv.tech:~$ <span class="system-message">${cmd}</span></div>`;
   if (state === 'askName') {
+    if(/\s/.test(cmd)) {
+      terminal.innerHTML += `<div class="system-message">Error: Name cannot contain spaces.</div>`;
+      input.placeholder = "Type your name...";
+      scrollTerminal();
+      return;
+    }
     username = cmd;
     terminal.innerHTML += `<div class="system-message">Welcome, ${cmd}!</div>`;
     terminal.innerHTML += `<div class="system-message">Type 'help' to see available commands</div>`;
     localStorage.setItem('name', cmd);
-    input.placeholder = "Enter a command...";
+    input.placeholder = "Type 'help' to see available commands. Auto fill is enabled.";
     prompt.innerHTML = `${username.toLowerCase()}@costuv.tech:~$ `;
-    state = 'mainMenu';
+    state = 'dpp mainMenu';
   } 
   else if (state === 'mainMenu') {
     const command = cmd.toLowerCase();
@@ -531,6 +522,7 @@ input.addEventListener('keydown', function (e) {
         input.value = '';
     }
 });
+// --- FILE SYSTEM REFACTOR START ---
 const fileSystem = {
   credentials: {
     username: "",
@@ -538,30 +530,24 @@ const fileSystem = {
   },
   structure: {},
   currentPath: '/home/user',
-  
+
   generateCredentials() {
     const possibleUsernames = ['admin', 'user', 'guest', 'hacker', 'coder', 'developer', 'sysadmin', 'root', 'testuser', 'anonymous', 'user123', 'user456', 'user789'];
     this.credentials.username = possibleUsernames[Math.floor(Math.random() * possibleUsernames.length)];
-
     const passwordLength = Math.floor(Math.random() * 3) + 4; // 4 to 6 characters
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let password = '';
-
     for (let i = 0; i < passwordLength; i++) {
       password += chars.charAt(Math.floor(Math.random() * chars.length));
     }
-
-    // 50% chance to add a number at the end
     if (Math.random() < 0.5) {
       password += Math.floor(Math.random() * 10);
     }
-
     this.credentials.password = password;
     return { username: this.credentials.username, password: this.credentials.password };
   },
 
-  // Generate unique file and folder names
-  getUniqueNames(count, type) {
+  getUniqueNames(count, type, parentDir) {
     // Expanded file name options with more variety
     const fileNamesByType = {
       config: ['config', 'settings', 'preferences', 'options', 'setup', 'parameters', 'env', 'globals', 'vars', 'profile', 'registry', 'defaults'],
@@ -633,16 +619,16 @@ const fileSystem = {
 
     // Add specific types for different directories
     const specificFoldersByDir = {
-      desktop: ['Shortcuts', 'Workspace', 'Projects', 'Games', 'Applications', 'Quick_Access', 'Favorites', 'Temp'],
-      documents: ['Reports', 'Work', 'Personal', 'School', 'Important', 'Templates', 'Contracts', 'Letters', 'Forms'],
-      pictures: ['Screenshots', 'Wallpapers', 'Photos', 'Camera', 'Drawings', 'Memes', 'Art', 'Backgrounds', 'Profile_Pics'],
-      music: ['Playlists', 'Albums', 'Artists', 'Genres', 'Favorites', 'Downloaded', 'Podcasts', 'Recordings', 'Mixes'],
-      videos: ['Movies', 'TV_Shows', 'Tutorials', 'Recordings', 'Clips', 'Edits', 'Shorts', 'Streams', 'Projects']
+      desktop: ['shortcuts', 'workspace', 'projects', 'games', 'applications', 'quick_access', 'favorites', 'temp'],
+      documents: ['reports', 'work', 'personal', 'school', 'important', 'templates', 'contracts', 'letters', 'forms'],
+      pictures: ['screenshots', 'wallpapers', 'photos', 'camera', 'drawings', 'memes', 'art', 'backgrounds', 'profile_pics'],
+      music: ['playlists', 'albums', 'artists', 'genres', 'favorites', 'downloaded', 'podcasts', 'recordings', 'mixes'],
+      videos: ['movies', 'tv_shows', 'tutorials', 'recordings', 'clips', 'edits', 'shorts', 'streams', 'projects']
     };
 
     // For specific executable types on desktop
     const executableTypes = [
-      'Setup', 'Installer', 'Game', 'App', 'Launcher', 'Browser', 'Utility', 'Tool', 'Player', 'Manager', 'Editor'
+      'setup', 'installer', 'game', 'app', 'launcher', 'browser', 'utility', 'tool', 'player', 'manager', 'editor'
     ];
 
     let namePool;
@@ -730,7 +716,6 @@ const fileSystem = {
     }
   },
 
-  // Generate random file content based on file extension
   generateFileContent(fileName) {
     const extension = fileName.split('.').pop().toLowerCase();
     const randomDate = new Date(Date.now() - Math.floor(Math.random() * 30 * 24 * 60 * 60 * 1000)).toISOString();
@@ -841,157 +826,76 @@ const fileSystem = {
     return defaultContent();
   },
 
-  // Create files and directories in a given location
-  generateRandomContentForAllDirectories() {
-    console.log("Generating completely random content for all directories...");
-    
-    // Add random content to each main directory
-    const mainDirs = ['desktop', 'documents', 'pictures', 'music', 'videos'];
-    
-    // First clear all existing content from main directories
-    mainDirs.forEach(dir => {
-      this.structure['/home/user'].children[dir].children = {};
-    });
-    
-    // Now add completely random content to each main directory
-    mainDirs.forEach(dir => {
-      console.log(`Generating random content for ${dir}...`);
-      
-      // Generate a random number of files for this directory
-      // Use different ranges for different directories to create variety
-      let minFiles, maxFiles, minDirs, maxDirs;
-      
-      switch(dir) {
-        case 'desktop':
-          minFiles = 2; maxFiles = 6;
-          minDirs = 1; maxDirs = 3;
-          break;
-        case 'documents':
-          minFiles = 3; maxFiles = 8;
-          minDirs = 2; maxDirs = 4;
-          break;
-        case 'pictures':
-          minFiles = 4; maxFiles = 10;
-          minDirs = 1; maxDirs = 3;
-          break;
-        case 'music':
-          minFiles = 3; maxFiles = 7;
-          minDirs = 1; maxDirs = 2;
-          break;
-        case 'videos':
-          minFiles = 2; maxFiles = 5;
-          minDirs = 1; maxDirs = 2;
-          break;
-        default:
-          minFiles = 2; maxFiles = 5;
-          minDirs = 1; maxDirs = 3;
-      }
-      
-      // Add random files - pass the directory name as the 4th parameter
-      this.addRandomFiles(this.structure['/home/user'].children[dir].children, minFiles, maxFiles, dir);
-      
-      // Add random subdirectories with files inside them - pass the directory name as the 4th parameter
-      this.addRandomSubdirectories(this.structure['/home/user'].children[dir].children, minDirs, maxDirs, dir);
-      
-      // Log the content that was added
-      const dirContents = this.structure['/home/user'].children[dir].children;
-      console.log(`Content generated for ${dir}:`, Object.keys(dirContents));
-    });
-  },
-  
-  // Add random files to a directory
-  addRandomFiles(directory, min, max) {
-    const parentDirName = arguments[3] || null; // Optional fourth argument for parent directory name
-    const count = Math.floor(Math.random() * (max - min + 1)) + min;
-    console.log(`Adding ${count} random files...`);
-    
-    // Ensure we have a directory object
-    if (!directory || typeof directory !== 'object') {
-      console.error("Invalid directory object:", directory);
-      return;
-    }
-    
-    // Return early if there are already enough files
-    const existingFileCount = Object.values(directory).filter(item => item.type === 'file').length;
-    if (existingFileCount >= min) {
-      console.log(`Directory already has ${existingFileCount} files, no need to add more`);
-      return;
-    }
-    
-    // Calculate how many more files we need to add
-    const filesToAdd = Math.max(0, count - existingFileCount);
-    console.log(`Adding ${filesToAdd} more files to reach desired count`);
-    
-    if (filesToAdd <= 0) {
-      return;
-    }
-    
-    const fileNames = this.getUniqueNames(filesToAdd, 'file', parentDirName);
-    console.log(`Generated file names:`, fileNames);
-    
-    fileNames.forEach(fileName => {
-      // Skip if this file name already exists
-      if (directory[fileName]) {
-        console.log(`File ${fileName} already exists, skipping`);
-        return;
-      }
-      
-      const content = this.generateFileContent(fileName);
-      console.log(`Adding file ${fileName} with content length ${content.length}`);
-      
-      directory[fileName] = {
-        type: 'file',
-        content: content
-      };
-    });
-  },
-  
-  // Add random subdirectories to a directory
-  addRandomSubdirectories(directory, min, max) {
-    const parentDirName = arguments[3] || null; // Optional fourth argument for parent directory name
-    const count = Math.floor(Math.random() * (max - min + 1)) + min;
-    console.log(`Adding ${count} random subdirectories...`);
-    
-    // Ensure we have a directory object
-    if (!directory || typeof directory !== 'object') {
-      console.error("Invalid directory object:", directory);
-      return;
-    }
-    
-    // Return early if there are already enough directories
-    const existingDirCount = Object.values(directory).filter(item => item.type === 'directory').length;
-    if (existingDirCount >= min) {
-      console.log(`Directory already has ${existingDirCount} subdirectories, no need to add more`);
-      return;
-    }
-    
-    // Calculate how many more directories we need to add
-    const dirsToAdd = Math.max(0, count - existingDirCount);
-    console.log(`Adding ${dirsToAdd} more subdirectories to reach desired count`);
-    
-    if (dirsToAdd <= 0) {
-      return;
-    }
-    
-    const dirNames = this.getUniqueNames(dirsToAdd, 'directory', parentDirName);
-    console.log(`Generated directory names:`, dirNames);
-    
-    dirNames.forEach(dirName => {
-      // Skip if this directory name already exists
-      if (directory[dirName]) {
-        console.log(`Directory ${dirName} already exists, skipping`);
-        return;
-      }
-      
-      console.log(`Adding subdirectory ${dirName}`);
-      
-      directory[dirName] = {
+  // MAIN: Generate the file system structure
+  generateFileSystem() {
+    this.structure = {
+      '/home/user': {
         type: 'directory',
-        children: {}
-      };
-      
-      // Add 1-3 files to each subdirectory
-      this.addRandomFiles(directory[dirName].children, 1, 3, dirName);
+        children: {
+          'desktop': { type: 'directory', children: {} },
+          'documents': { type: 'directory', children: {} },
+          'pictures': { type: 'directory', children: {} },
+          'music': { type: 'directory', children: {} },
+          'videos': { type: 'directory', children: {} }
+        }
+      }
+    };
+    this.generateRandomContentForAllDirectories();
+    this.placeCredentialsInFiles();
+    this.currentPath = '/home/user';
+    // DEBUG: Output structure to UI for confirmation
+    if (typeof gameTerminalContent !== 'undefined') {
+      let debugOut = '<div class="system-message"><b>DEBUG: File system generated:</b><br>';
+      const mainDirs = ['desktop', 'documents', 'pictures', 'music', 'videos'];
+      mainDirs.forEach(dir => {
+        debugOut += `<b>${dir}/</b><br>`;
+        const dirObj = this.structure['/home/user'].children[dir].children;
+        Object.keys(dirObj).forEach(sub => {
+          if (dirObj[sub].type === 'directory') {
+            debugOut += `&nbsp;&nbsp;<span class='directory'>${sub}/</span><br>`;
+            Object.keys(dirObj[sub].children).forEach(f => {
+              debugOut += `&nbsp;&nbsp;&nbsp;&nbsp;<span class='file'>${f}</span><br>`;
+            });
+          } else {
+            debugOut += `&nbsp;&nbsp;<span class='file'>${sub}</span><br>`;
+          }
+        });
+      });
+      debugOut += '</div>';
+      gameTerminalContent.innerHTML += debugOut;
+    }
+    return this.structure;
+  },
+
+  // Generate random content for all main directories
+  generateRandomContentForAllDirectories() {
+    const mainDirs = ['desktop', 'documents', 'pictures', 'music', 'videos'];
+    mainDirs.forEach(dir => {
+      const dirObj = this.structure['/home/user'].children[dir].children;
+      // Clear
+      for (const k in dirObj) delete dirObj[k];
+      // Add 1 subfolder only
+      const subfolderCount = 1;
+      const subfolderNames = this.getUniqueNames(subfolderCount, 'directory', dir);
+      subfolderNames.forEach(subName => {
+        dirObj[subName] = { type: 'directory', children: {} };
+        // Each subfolder: 1 file only
+        const fileCount = 1;
+        const fileNames = this.getUniqueNames(fileCount, 'file', dir);
+        fileNames.forEach(f => {
+          dirObj[subName].children[f] = { type: 'file', content: this.generateFileContent(f) };
+        });
+      });
+      // Optionally: add 1 file directly in main folder (50% chance)
+      if (Math.random() > 0.5) {
+        const mainFileCount = 1;
+        const mainFileNames = this.getUniqueNames(mainFileCount, 'file', dir);
+        mainFileNames.forEach(f => {
+          dirObj[f] = { type: 'file', content: this.generateFileContent(f) };
+        });
+      }
+      // DEBUG: Log the generated structure for this main directory
+      console.log(`Generated structure for ${dir}:`, JSON.parse(JSON.stringify(dirObj)));
     });
   },
 
@@ -999,89 +903,60 @@ const fileSystem = {
   placeCredentialsInFiles() {
     const creds = this.generateCredentials();
     const allFilePaths = this.getAllFilePaths('/home/user');
-    
-    // Make sure we have enough files
-    if (allFilePaths.length < 2) {
-      console.error("Not enough files to place credentials");
-      return;
-    }
-    
-    // Shuffle the file paths and choose the first two for username and password
+    if (allFilePaths.length < 2) return;
     const shuffledPaths = [...allFilePaths].sort(() => Math.random() - 0.5);
-    const usernameFilePath = shuffledPaths[0];
-    const passwordFilePath = shuffledPaths[1];
-    
-    // Insert credentials into files
-    this.insertCredentialInFile(usernameFilePath, 'username', creds.username);
-    this.insertCredentialInFile(passwordFilePath, 'password', creds.password);
-    
-    console.log(`Username (${creds.username}) placed in file: ${usernameFilePath}`);
-    console.log(`Password (${creds.password}) placed in file: ${passwordFilePath}`);
+    this.insertCredentialInFile(shuffledPaths[0], 'username', creds.username);
+    this.insertCredentialInFile(shuffledPaths[1], 'password', creds.password);
   },
-  
-  // Get all file paths in the file system
+
   getAllFilePaths(startPath, currentPaths = []) {
     const dirContents = this.getDirectoryContents(startPath);
-    
     if (!dirContents) return currentPaths;
-    
     Object.keys(dirContents).forEach(item => {
       const itemObj = dirContents[item];
       const itemPath = `${startPath}/${item}`;
-      
       if (itemObj.type === 'directory') {
-        // Recursively get files in subdirectories
         this.getAllFilePaths(itemPath, currentPaths);
       } else if (itemObj.type === 'file') {
         currentPaths.push(itemPath);
       }
     });
-    
     return currentPaths;
   },
-  
-  // Get the contents of a directory at a given path
+
   getDirectoryContents(path) {
     console.log(`Getting directory contents for path: ${path}`);
-    
     // Special case for root path
     if (path === '/home/user') {
       console.log('Root path detected, returning:', Object.keys(this.structure['/home/user'].children));
       return this.structure['/home/user'].children;
     }
-    
     const parts = path.split('/').filter(p => p);
     let current = this.structure;
-    
     console.log(`Path parts:`, parts);
-    
     // Navigate to the specified directory
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i];
-      console.log(`Processing part: ${part}, current keys:`, current ? Object.keys(current) : 'null');
-      
-      if (i === 0 && part === 'home') {
-        if (current['/home/user'] && current['/home/user'].children) {
-          current = current['/home/user'].children;
-          console.log('Navigated to /home/user children');
+    if (parts[0] === 'home' && parts[1] === 'user') {
+      current = this.structure['/home/user'].children;
+      for (let i = 2; i < parts.length; i++) {
+        const part = parts[i];
+        console.log(`Processing part: ${part}, current keys:`, current ? Object.keys(current) : 'null');
+        if (current[part] && current[part].type === 'directory') {
+          current = current[part].children;
+          console.log(`Navigated to ${part} children`);
         } else {
-          console.log('Failed to navigate to /home/user children');
+          console.log(`Failed to navigate to ${part}`);
           return null;
         }
-      } else if (current[part] && current[part].type === 'directory') {
-        current = current[part].children;
-        console.log(`Navigated to ${part} children`);
-      } else {
-        console.log(`Failed to navigate to ${part}`);
-        return null;
       }
+    } else {
+      // fallback for any other path
+      console.log('Failed to navigate: path does not start with /home/user');
+      return null;
     }
-    
     console.log(`Found directory contents:`, current ? Object.keys(current) : 'null');
     return current;
   },
   
-  // Insert credential in a file
   insertCredentialInFile(filePath, credType, credValue) {
     const fileExt = filePath.split('.').pop().toLowerCase();
     const fileName = filePath.split('/').pop();
@@ -1146,211 +1021,6 @@ const fileSystem = {
     return true;
   },
   
-  // Initialize the file system
-  generateFileSystem() {
-    console.log("Generating file system...");
-    
-    // Reset the structure - Create required base directories but with empty children
-    this.structure = {
-      '/home/user': {
-        type: 'directory',
-        children: {
-          'desktop': { type: 'directory', children: {} },
-          'documents': { type: 'directory', children: {} },
-          'pictures': { type: 'directory', children: {} },
-          'music': { type: 'directory', children: {} },
-          'videos': { type: 'directory', children: {} }
-        }
-      }
-    };
-    
-    console.log("Base structure created:", Object.keys(this.structure['/home/user'].children));
-    
-    // Each game will have totally random content - we no longer use fixed base content
-    // Generate totally random content for all required directories
-    this.generateRandomContentForAllDirectories();
-    console.log("Random content generated for all directories");
-    
-    // Add some deeper nested directories (for hiding credentials)
-    this.addRandomNestedDirectories();
-    console.log("Random nested directories added");
-    
-    // Double check that all main directories have content
-    this.ensureDirectoriesHaveContent();
-    console.log("Directory content verified");
-    
-    // Place credentials in random files
-    this.placeCredentialsInFiles();
-    console.log("Credentials placed in files");
-    
-    // Verify credentials placement
-    this.verifyCredentialsPlacement();
-    
-    // Set the current path
-    this.currentPath = '/home/user';
-    
-    // Print the file system structure
-    this.printFileSystemStructure('/home/user');
-    
-    return this.structure;
-  },
-  
-  // Ensure all directories have at least some content
-  ensureDirectoriesHaveContent() {
-    const mainDirs = ['desktop', 'documents', 'pictures', 'music', 'videos'];
-    
-    mainDirs.forEach(dir => {
-      // Make sure the directory exists
-      if (!this.structure['/home/user'].children[dir]) {
-        console.log(`Directory ${dir} missing, creating it...`);
-        this.structure['/home/user'].children[dir] = { type: 'directory', children: {} };
-      }
-      
-      // Check if directory has children property
-      if (!this.structure['/home/user'].children[dir].children) {
-        console.log(`Directory ${dir} has no children property, initializing...`);
-        this.structure['/home/user'].children[dir].children = {};
-      }
-      
-      const dirContents = this.structure['/home/user'].children[dir].children;
-      const contentCount = Object.keys(dirContents).length;
-      
-      console.log(`Checking content for ${dir}: ${contentCount} items`);
-      
-      // If there are no files or directories, add some
-      if (contentCount === 0) {
-        console.log(`${dir} is empty, adding content...`);
-        
-        // Add different amounts based on directory type to create variety
-        switch(dir) {
-          case 'desktop':
-            this.addRandomFiles(dirContents, 2, 4);
-            this.addRandomSubdirectories(dirContents, 1, 2);
-            break;
-          case 'documents':
-            this.addRandomFiles(dirContents, 3, 5);
-            this.addRandomSubdirectories(dirContents, 1, 3);
-            break;
-          case 'pictures':
-            this.addRandomFiles(dirContents, 3, 6);
-            this.addRandomSubdirectories(dirContents, 1, 2);
-            break;
-          case 'music':
-            this.addRandomFiles(dirContents, 2, 4);
-            this.addRandomSubdirectories(dirContents, 1, 2);
-            break;
-          case 'videos':
-            this.addRandomFiles(dirContents, 2, 3);
-            this.addRandomSubdirectories(dirContents, 1, 2);
-            break;
-          default:
-            this.addRandomFiles(dirContents, 2, 4);
-            this.addRandomSubdirectories(dirContents, 1, 2);
-        }
-      }
-    });
-  },
-  
-  // Debug method to print the file system structure
-  printFileSystemStructure(path, indent = 0) {
-    const contents = this.getDirectoryContents(path);
-    if (!contents) {
-      console.log(`${' '.repeat(indent)}Path not found: ${path}`);
-      return;
-    }
-    
-    console.log(`${' '.repeat(indent)}Directory: ${path}`);
-    
-    for (const item in contents) {
-      if (contents[item].type === 'directory') {
-        this.printFileSystemStructure(`${path}/${item}`, indent + 2);
-      } else {
-        console.log(`${' '.repeat(indent + 2)}File: ${item}`);
-      }
-    }
-  },
-  
-
-  // Add random nested directories for deeper structure and credential hiding
-  addRandomNestedDirectories() {
-    console.log("Adding random nested directories...");
-    
-    // Generate a set of random deeply nested paths
-    const nestedDirCount = Math.floor(Math.random() * 4) + 3; // 3-6 deep paths
-    const nestedDirStructure = [];
-    
-    // Define some categories of deep folder structures we might want to create
-    const folderCategories = [
-      ['projects', 'work', 'personal', 'archived', 'backup', 'shared'],
-      ['configs', 'settings', 'preferences', 'profiles', 'accounts'],
-      ['downloads', 'uploads', 'exports', 'imports', 'temp'],
-      ['apps', 'programs', 'games', 'utilities', 'tools'],
-      ['media', 'files', 'resources', 'assets', 'storage']
-    ];
-    
-    // Add some genuinely random nested paths
-    for (let i = 0; i < nestedDirCount; i++) {
-      // Select a random main directory to start from
-      const mainDirs = ['desktop', 'documents', 'pictures', 'music', 'videos'];
-      const startDir = mainDirs[Math.floor(Math.random() * mainDirs.length)];
-      
-      // Create a path with 2-4 nested levels
-      const nestLevels = Math.floor(Math.random() * 3) + 2; // 2-4 levels
-      let path = `/home/user/${startDir}`;
-      
-      // Add folder levels using the categories
-      for (let j = 0; j < nestLevels; j++) {
-        // Select a random category and a random folder from that category
-        const category = folderCategories[Math.floor(Math.random() * folderCategories.length)];
-        const folder = category[Math.floor(Math.random() * category.length)];
-        
-        // Add a random numeric suffix 50% of the time to increase uniqueness
-        const suffix = Math.random() > 0.5 ? '_' + Math.floor(Math.random() * 100) : '';
-        path += `/${folder}${suffix}`;
-      }
-      
-      nestedDirStructure.push(path);
-    }
-    
-    console.log("Created nested directory paths:", nestedDirStructure);
-    
-    // Create each nested directory path and add random files
-    nestedDirStructure.forEach(path => {
-      this.createNestedDirectory(path);
-    });
-  },
-  
-  // Create a nested directory structure with some files
-  createNestedDirectory(path) {
-    const parts = path.split('/').filter(p => p);
-    let current = this.structure;
-    let currentPath = '';
-    
-    // Create each directory in the path if it doesn't exist
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i];
-      
-      if (i === 0 && part === 'home') {
-        current = current['/home/user'].children;
-        currentPath = '/home/user';
-      } else {
-        currentPath += '/' + part;
-        
-        if (!current[part]) {
-          current[part] = {
-            type: 'directory',
-            children: {}
-          };
-        }
-        
-        current = current[part].children;
-      }
-    }
-    
-    // Add 1-3 files to the deepest directory
-    this.addRandomFiles(current, 1, 3);
-  },
-
   // Method to scan files for credentials
   scanFilesForCredentials() {
     console.log("Scanning files for credentials...");
@@ -1426,16 +1096,19 @@ const fileSystem = {
     return credentialsMatch;
   },
 };
+// --- FILE SYSTEM REFACTOR END ---
+
+// Command history for game terminal
+let gameCommandHistory = [];
+let gameCommandHistoryIndex = -1;
 
 // Process file system commands in the game terminal
 function processFileSystemCommand(cmd) {
   console.log(`Processing file system command: ${cmd}`);
-  
   const parts = cmd.trim().split(/\s+/);
   const command = parts[0].toLowerCase();
   const args = parts.slice(1);
   let terminalContent = '';
-  
   // Make sure the file system is initialized
   if (!fileSystem.structure['/home/user'] || Object.keys(fileSystem.structure['/home/user'].children).length === 0) {
     console.log("File system not initialized, initializing now...");
@@ -1444,8 +1117,6 @@ function processFileSystemCommand(cmd) {
     // Check if main directories are properly populated
     const mainDirs = ['desktop', 'documents', 'pictures', 'music', 'videos'];
     let needsRepair = false;
-    
-    // Check each main directory
     mainDirs.forEach(dir => {
       if (!fileSystem.structure['/home/user'].children[dir] || 
           !fileSystem.structure['/home/user'].children[dir].children ||
@@ -1453,11 +1124,9 @@ function processFileSystemCommand(cmd) {
         needsRepair = true;
       }
     });
-    
-    // If any main directory is missing or empty, repair the file system
     if (needsRepair) {
-      console.log("File system needs repair, regenerating directories...");
-      fileSystem.ensureDirectoriesHaveContent();
+      console.log("File system needs repair, regenerating...");
+      fileSystem.generateFileSystem();
     }
   }
   
@@ -1750,3 +1419,88 @@ window.addEventListener('resize', function() {
     loginMatrixCanvas.height = loginMatrixCanvas.parentElement.offsetHeight;
   }
 });
+
+
+
+
+
+
+// Add command history navigation to game terminal input
+if (gameInput) {
+  gameInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      const value = gameInput.value.trim();
+      if (!value) return;
+      // Add to history
+      gameCommandHistory.push(value);
+      gameCommandHistoryIndex = gameCommandHistory.length;
+      processGameCommand(value);
+      gameInput.value = '';
+    } else if (e.key === 'ArrowUp') {
+      if (gameCommandHistory.length === 0) return;
+      if (gameCommandHistoryIndex > 0) {
+        gameCommandHistoryIndex--;
+        gameInput.value = gameCommandHistory[gameCommandHistoryIndex];
+      } else if (gameCommandHistoryIndex === 0) {
+        gameInput.value = gameCommandHistory[0];
+      }
+      setTimeout(() => gameInput.setSelectionRange(gameInput.value.length, gameInput.value.length), 0);
+      e.preventDefault();
+    } else if (e.key === 'ArrowDown') {
+      if (gameCommandHistory.length === 0) return;
+      if (gameCommandHistoryIndex < gameCommandHistory.length - 1) {
+        gameCommandHistoryIndex++;
+        gameInput.value = gameCommandHistory[gameCommandHistoryIndex];
+      } else if (gameCommandHistoryIndex === gameCommandHistory.length - 1) {
+        gameCommandHistoryIndex++;
+        gameInput.value = '';
+      }
+      setTimeout(() => gameInput.setSelectionRange(gameInput.value.length, gameInput.value.length), 0);
+      e.preventDefault();
+    } else if (e.key === 'Tab') {
+      // --- AUTOCOMPLETE START ---
+      e.preventDefault();
+      const inputValue = gameInput.value;
+      const cursorPos = gameInput.selectionStart;
+      // Split input into command and last word
+      const beforeCursor = inputValue.slice(0, cursorPos);
+      const afterCursor = inputValue.slice(cursorPos);
+      const match = beforeCursor.match(/^(.*?)([\w\-\.\/]+)$/);
+      if (!match) return;
+      const cmdPart = match[1];
+      const lastWord = match[2];
+      // Determine autocomplete context (for cd/cat/ls, use current dir)
+      let dirContents = fileSystem.getDirectoryContents(fileSystem.currentPath);
+      if (!dirContents) return;
+      const items = Object.keys(dirContents);
+      // Only suggest items that start with lastWord
+      const matches = items.filter(name => name.startsWith(lastWord));
+      if (matches.length === 0) return;
+      // If only one match, autocomplete fully
+      let completion = '';
+      if (matches.length === 1) {
+        completion = matches[0];
+      } else {
+        // Find longest common prefix
+        let prefix = matches[0];
+        for (let i = 1; i < matches.length; i++) {
+          let j = 0;
+          while (j < prefix.length && j < matches[i].length && prefix[j] === matches[i][j]) j++;
+          prefix = prefix.slice(0, j);
+        }
+        completion = prefix;
+      }
+      // Replace lastWord with completion
+      gameInput.value = cmdPart + completion + afterCursor;
+      // Move cursor to end of completion
+      const newPos = (cmdPart + completion).length;
+      setTimeout(() => gameInput.setSelectionRange(newPos, newPos), 0);
+      // Optionally, show all matches if more than one
+      if (matches.length > 1) {
+        gameTerminalContent.innerHTML += `<div class="system-message">${matches.map(m => `<span>${m}</span>`).join('  ')}</div>`;
+        scrollGameTerminal();
+      }
+      // --- AUTOCOMPLETE END ---
+    }
+  });
+}
