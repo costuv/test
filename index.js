@@ -398,7 +398,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Game login logic
 function attemptLogin() {
-  const usernameInput = document.getElementById('username').value.trim().toLowerCase();
+  const usernameInput = document.getElementById('username').value.trim();
   const passwordInput = document.getElementById('password').value.trim();
   
   // Check if both fields are filled
@@ -410,8 +410,8 @@ function attemptLogin() {
   
   // Scan the file system for the hidden credentials
   const creds = fileSystem.scanFilesForCredentials();
-  const correctUsername = creds.username ? creds.username.toLowerCase() : '';
-  const correctPassword = creds.password ? creds.password.toLowerCase() : '';
+  const correctUsername = creds.username ? creds.username : '';
+  const correctPassword = creds.password ? creds.password : '';
   
   console.log(`Checking login with username: ${usernameInput}, password: ${passwordInput}`);
   console.log(`Correct credentials: username=${correctUsername}, password=${correctPassword}`);
@@ -493,7 +493,7 @@ function processCommand(cmd) {
     localStorage.setItem('name', cmd);
     input.placeholder = "Type 'help' to see available commands. Auto fill is enabled.";
     prompt.innerHTML = `${username.toLowerCase()}@costuv.tech:~$ `;
-    state = 'dpp mainMenu';
+    state = 'mainMenu';
   } 
   else if (state === 'mainMenu') {
     const command = cmd.toLowerCase();
@@ -1047,12 +1047,14 @@ const fileSystem = {
       // Look for username pattern
       const usernameMatch = content.match(/username.*?:\s*(\w+)/i) || 
                            content.match(/User created:\s*(\w+)/i) ||
-                           content.match(/System username:\s*(\w+)/i);
+                           content.match(/System username:\s*(\w+)/i) ||
+                           content.match(/\/\/.*username.*?:\s*(\w+)/i);
       
       // Look for password pattern
       const passwordMatch = content.match(/password.*?:\s*(\w+)/i) || 
                            content.match(/Default password set to:\s*(\w+)/i) ||
-                           content.match(/Secure password:\s*(\w+)/i);
+                           content.match(/Secure password:\s*(\w+)/i) ||
+                           content.match(/\/\/.*password.*?:\s*(\w+)/i);
       
       if (usernameMatch && !foundUsername) {
         foundUsername = usernameMatch[1];
